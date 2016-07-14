@@ -6,11 +6,15 @@ module ReactOnRails
       Pathname.new(dir)
     end
 
-    def copy_file(target, destination)
-      target_path = ReactOnRails::assets_path.join(target)
+    def copy_file(source, destination)
+      source_path = ReactOnRails::assets_path.join(source)
       dest_path = ReactOnRails::assets_path.join(destination)
-      puts "React On Rails: Copying #{target_path} to #{dest_path}"
-      `cp -rf #{target_path} #{dest_path}`
+
+      # Some .gz assets like images doesn't exist
+      if File.exist?(source_path)
+        puts "React On Rails: Copying #{source_path} to #{dest_path}"
+        `cp -rf #{source_path} #{dest_path}`
+      end
     end
   end
 end
@@ -18,10 +22,10 @@ end
 namespace :react_on_rails do
   namespace :assets do
     desc "Creates non-digested symlinks for the assets in the public asset dir"
-    task symlink_non_digested_assets: :"assets:environment" do
-      if ReactOnRails.configuration.symlink_non_digested_assets_regex
+    task copy_non_digested_assets: :"assets:environment" do
+      if ReactOnRails.configuration.non_digested_assets_regex || ReactOnRails.configuration.symlink_non_digested_assets_regex
         manifest_glob = Dir.glob(ReactOnRails::assets_path.join(".sprockets-manifest-*.json")) +
-            Dir.glob(ReactOnRails::assets_path.join("manifest-*.json"))
+          Dir.glob(ReactOnRails::assets_path.join("manifest-*.json"))
         if manifest_glob.empty?
           puts "Warning: React On Rails: expected to find .sprockets-manifest-*.json or manifest-*.json "\
                    "at #{ReactOnRails::assets_path}, but found none. Canceling copying tasks."
@@ -29,9 +33,13 @@ namespace :react_on_rails do
         end
         manifest_path = manifest_glob.first
         manifest_data = JSON.load(File.new(manifest_path))
-
+        regex = ReactOnRails.configuration.non_digested_assets_regex ||
+          ReactOnRails.configuration.symlink_non_digested_assets_regex
+        if ReactOnRails.configuration.symlink_non_digested_assets_regex
+          puts "React on Rails: warning 'symlink_non_digested_assets_regex' in configuration"\
+                      " is deprecated, use non_digested_assets_regex instead"
+        end
         manifest_data["assets"].each do |logical_path, digested_path|
-          regex = ReactOnRails.configuration.symlink_non_digested_assets_regex
           if logical_path =~ regex
             digested_gz_path = "#{digested_path}.gz"
             logical_gz_path = "#{logical_path}.gz"
@@ -80,9 +88,8 @@ end
 # These tasks run as pre-requisites of assets:precompile.
 # Note, it's not possible to refer to ReactOnRails configuration values at this point.
 Rake::Task["assets:precompile"]
-    .clear_prerequisites
-    .enhance([:environment, "react_on_rails:assets:compile_environment"])
-    .enhance do
-  Rake::Task["react_on_rails:assets:copy_non_digested_assets"].invoke
+  .clear_prerequisites
+  .enhance([:environment, "react_on_rails:assets:compile_environment"])
+  .enhance do
+   Rake::Task["react_on_rails:assets:copy_non_digested_assets"].invoke
 end
-

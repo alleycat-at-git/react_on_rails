@@ -57,7 +57,8 @@ module ReactOnRails
       webpack_generated_files: [],
       rendering_extension: nil,
       server_render_method: "",
-      symlink_non_digested_assets_regex: /\.(png|jpg|jpeg|gif|tiff|woff|ttf|eot|svg)/,
+      non_digested_assets_regex: /\.(png|jpg|jpeg|gif|tiff|woff|ttf|eot|svg)/,
+      symlink_non_digested_assets_regex: nil,
       npm_build_test_command: "",
       npm_build_production_command: ""
     )
@@ -71,7 +72,7 @@ module ReactOnRails
                   :skip_display_none, :generated_assets_dirs, :generated_assets_dir,
                   :webpack_generated_files, :rendering_extension, :npm_build_test_command,
                   :npm_build_production_command,
-                  :server_render_method, :symlink_non_digested_assets_regex
+                  :server_render_method, :symlink_non_digested_assets_regex, :non_digested_assets_regex
 
     def initialize(server_bundle_js_file: nil, prerender: nil, replay_console: nil,
                    trace: nil, development_mode: nil,
@@ -81,7 +82,8 @@ module ReactOnRails
                    generated_assets_dir: nil, webpack_generated_files: nil,
                    rendering_extension: nil, npm_build_test_command: nil,
                    npm_build_production_command: nil,
-                   server_render_method: nil, symlink_non_digested_assets_regex: nil)
+                   server_render_method: nil, symlink_non_digested_assets_regex: nil,
+                   non_digested_assets_regex: nil)
       self.server_bundle_js_file = server_bundle_js_file
       self.generated_assets_dirs = generated_assets_dirs
       self.generated_assets_dir = generated_assets_dir
@@ -108,6 +110,7 @@ module ReactOnRails
       self.rendering_extension = rendering_extension
 
       self.server_render_method = server_render_method
+      self.non_digested_assets_regex = non_digested_assets_regex
       self.symlink_non_digested_assets_regex = symlink_non_digested_assets_regex
     end
   end
